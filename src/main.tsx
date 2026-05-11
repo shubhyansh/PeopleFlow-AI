@@ -12,9 +12,16 @@ import './styles/index.css';
 function Boot() {
   const [stage, setStage] = useState<'loading' | 'setup' | 'ready'>('loading');
   const [existing, setExisting] = useState<{ url: string; anonKey: string } | null>(null);
+  const [hasGroq, setHasGroq] = useState(false);
 
   useEffect(() => {
     (async () => {
+      // Groq is independent of Supabase — check both regardless of which stage we end up in.
+      try {
+        setHasGroq(await ipc.secrets.hasGroqKey());
+      } catch {
+        setHasGroq(false);
+      }
       try {
         const cfg = await ipc.config.getSupabase();
         if (cfg) {
@@ -44,7 +51,11 @@ function Boot() {
 
   if (stage === 'setup') {
     return (
-      <SetupScreen initialConfig={existing} onConfigured={() => setStage('ready')} />
+      <SetupScreen
+        initialConfig={existing}
+        hasGroqKey={hasGroq}
+        onConfigured={() => setStage('ready')}
+      />
     );
   }
 

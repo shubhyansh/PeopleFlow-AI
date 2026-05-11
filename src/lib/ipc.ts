@@ -27,5 +27,6 @@ export const ipc = {
     getSupabase: (): Promise<SupabaseConfig | null> => bridge().config.getSupabase(),
     setSupabase: (cfg: SupabaseConfig): Promise<void> => bridge().config.setSupabase(cfg),
     clearSupabase: (): Promise<void> => bridge().config.clearSupabase(),
+    setGroq: (key: string): Promise<void> => bridge().config.setGroq(key),
   },
 };

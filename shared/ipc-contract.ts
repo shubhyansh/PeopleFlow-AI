@@ -4,6 +4,7 @@ export const IPC = {
   configGetSupabase: 'config:getSupabase',
   configSetSupabase: 'config:setSupabase',
   configClearSupabase: 'config:clearSupabase',
+  configSetGroq: 'config:setGroq',
 } as const;
 
 export interface SupabaseConfig {
@@ -42,6 +43,7 @@ export interface FlowdeskBridge {
     getSupabase: () => Promise<SupabaseConfig | null>;
     setSupabase: (cfg: SupabaseConfig) => Promise<void>;
     clearSupabase: () => Promise<void>;
+    setGroq: (key: string) => Promise<void>;
   };
 }
 

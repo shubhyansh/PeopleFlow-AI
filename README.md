@@ -114,15 +114,13 @@ The Groq key lives in the Electron main process and is **never** sent to the ren
    - Windows: `FlowDesk-Setup-x.y.z.exe`
 2. **Install** — on macOS, the first launch needs *right-click → Open* once (no Apple Developer signature, see [§ Mac install notes](#-mac-install-notes)).
 3. **Stand up your Supabase** — sign up at [supabase.com](https://supabase.com), create a project (free tier is fine), copy the URL + anon key from **Settings → API**.
-4. **Run FlowDesk** → the first launch shows a setup screen:
+4. **Get a Groq key** (admins + leads only) at [console.groq.com/keys](https://console.groq.com/keys). Regular employees skip this.
+5. **Run FlowDesk** → the first launch shows a setup screen:
    - It hands you the bootstrap SQL — copy it, paste into Supabase **SQL Editor → New query** → Run.
    - Paste your project URL and anon key into the form.
-   - Click **Test connection**, then **Save & continue**.
-5. **Drop a Groq key** into `~/Library/Application Support/FlowDesk/.env` (macOS) or `%APPDATA%\FlowDesk\.env` (Windows):
-   ```
-   GROQ_API_KEY=gsk_your_key_here
-   ```
-   Get one at [console.groq.com/keys](https://console.groq.com/keys). Restart FlowDesk.
+   - Click **Test connection**.
+   - Paste your Groq key in the last field (or leave blank if you're not creating tasks).
+   - Click **Save & continue**.
 6. **Sign in** as `admin` / `Admin@123` and start adding employees.
 
 > Every install points at its own Supabase project. Hand the same DMG to a different team and they configure their own database in 3 minutes — no rebuild, no shared data.

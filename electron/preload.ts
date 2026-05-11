@@ -21,6 +21,7 @@ const bridge: FlowdeskBridge = {
     setSupabase: (cfg: SupabaseConfig): Promise<void> =>
       ipcRenderer.invoke(IPC.configSetSupabase, cfg),
     clearSupabase: (): Promise<void> => ipcRenderer.invoke(IPC.configClearSupabase),
+    setGroq: (key: string): Promise<void> => ipcRenderer.invoke(IPC.configSetGroq, key),
   },
 };
 

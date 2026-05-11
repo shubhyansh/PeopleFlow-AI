@@ -2,6 +2,7 @@ import { app } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import dotenv from 'dotenv';
+import { getGroqKeyFromConfig } from './configStore';
 
 let loaded = false;
 
@@ -23,7 +24,17 @@ export function loadEnv(): void {
   }
 }
 
+/**
+ * Resolution order:
+ *   1. Per-user config file (set via the in-app setup screen) — preferred
+ *   2. GROQ_API_KEY from .env — dev convenience + legacy install path
+ *
+ * Read fresh on every call so updates from the setup screen take effect
+ * without an app restart.
+ */
 export function getGroqApiKey(): string | null {
+  const fromConfig = getGroqKeyFromConfig();
+  if (fromConfig) return fromConfig;
   return process.env.GROQ_API_KEY?.trim() || null;
 }
 

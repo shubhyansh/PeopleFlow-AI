@@ -8,6 +8,7 @@ import setupSql from '../../supabase/setup.sql?raw';
 
 interface Props {
   initialConfig?: { url: string; anonKey: string } | null;
+  hasGroqKey?: boolean;
   onConfigured: () => void;
 }
 
@@ -17,9 +18,10 @@ type TestState =
   | { kind: 'ok' }
   | { kind: 'error'; reason: string };
 
-export default function SetupScreen({ initialConfig, onConfigured }: Props) {
+export default function SetupScreen({ initialConfig, hasGroqKey, onConfigured }: Props) {
   const [url, setUrl] = useState(initialConfig?.url ?? '');
   const [anonKey, setAnonKey] = useState(initialConfig?.anonKey ?? '');
+  const [groqKey, setGroqKey] = useState('');
   const [test, setTest] = useState<TestState>({ kind: 'idle' });
   const [saving, setSaving] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -53,6 +55,10 @@ export default function SetupScreen({ initialConfig, onConfigured }: Props) {
       const cfg = { url: url.trim(), anonKey: anonKey.trim() };
       await ipc.config.setSupabase(cfg);
       setSupabaseConfig(cfg);
+      const trimmedGroq = groqKey.trim();
+      if (trimmedGroq) {
+        await ipc.config.setGroq(trimmedGroq);
+      }
       onConfigured();
     } catch (err) {
       setTest({
@@ -97,6 +103,7 @@ export default function SetupScreen({ initialConfig, onConfigured }: Props) {
           </p>
         </div>
 
+        <form onSubmit={handleSave}>
         <ol className="space-y-6">
           <li>
             <div className="flex items-baseline gap-3 mb-2">
@@ -167,7 +174,7 @@ export default function SetupScreen({ initialConfig, onConfigured }: Props) {
               <span className="text-slate-200">anon public</span> key (not service_role).
             </p>
 
-            <form className="space-y-4 pl-8" onSubmit={handleSave}>
+            <div className="space-y-4 pl-8">
               <div>
                 <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">
                   Project URL
@@ -214,7 +221,7 @@ export default function SetupScreen({ initialConfig, onConfigured }: Props) {
                 </p>
               )}
 
-              <div className="flex items-center gap-3 pt-2">
+              <div className="pt-2">
                 <button
                   type="button"
                   className="btn-ghost"
@@ -224,6 +231,60 @@ export default function SetupScreen({ initialConfig, onConfigured }: Props) {
                   {test.kind === 'testing' ? <Spinner /> : null}
                   Test connection
                 </button>
+              </div>
+            </div>
+          </li>
+
+          <li>
+            <div className="flex items-baseline gap-3 mb-2">
+              <span className="font-mono text-xs text-teal">04</span>
+              <h2 className="font-display text-lg font-medium text-white">
+                Add a Groq API key <span className="text-slate-500 text-sm">(optional)</span>
+              </h2>
+            </div>
+            <div className="pl-8 space-y-3">
+              <p className="text-slate-400 text-sm leading-relaxed">
+                Powers the AI that interviews you while creating tasks. Only admins and project
+                leads need this — regular employees can skip it. Get a free key at{' '}
+                <a
+                  href="https://console.groq.com/keys"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-teal hover:underline"
+                >
+                  console.groq.com/keys
+                </a>
+                .
+              </p>
+              <div>
+                <label className="block text-xs font-medium text-slate-400 mb-1.5 uppercase tracking-wide">
+                  Groq API key
+                </label>
+                <input
+                  type="password"
+                  className="input-base font-mono text-sm"
+                  placeholder={
+                    hasGroqKey
+                      ? 'Already saved — leave blank to keep it'
+                      : 'gsk_…'
+                  }
+                  value={groqKey}
+                  onChange={(e) => setGroqKey(e.target.value)}
+                  autoComplete="off"
+                  spellCheck={false}
+                />
+                {hasGroqKey && !groqKey && (
+                  <p className="text-xs text-slate-500 mt-1.5">
+                    A key is already saved on this Mac. Type a new one to replace it.
+                  </p>
+                )}
+                {hasGroqKey && groqKey && (
+                  <p className="text-xs text-amber-300 mt-1.5">
+                    This will overwrite the key currently saved on this Mac.
+                  </p>
+                )}
+              </div>
+              <div className="flex items-center gap-3 pt-1">
                 <button
                   type="submit"
                   className="btn-primary"
@@ -232,10 +293,16 @@ export default function SetupScreen({ initialConfig, onConfigured }: Props) {
                   {saving ? <Spinner /> : null}
                   Save &amp; continue
                 </button>
+                <span className="text-xs text-slate-500">
+                  {formReady
+                    ? 'Supabase config is valid — you can continue.'
+                    : 'Fill in Supabase URL and anon key above first.'}
+                </span>
               </div>
-            </form>
+            </div>
           </li>
         </ol>
+        </form>
       </motion.div>
     </div>
   );
