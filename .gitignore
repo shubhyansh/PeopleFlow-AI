@@ -16,6 +16,7 @@ out/
 # Editor
 .vscode/
 .idea/
+.claude/
 *.suo
 *.ntvs*
 *.njsproj
