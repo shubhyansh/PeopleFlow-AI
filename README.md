@@ -165,12 +165,12 @@ npm run dist          # current platform
 Output lands in `release/`. **No keys are baked into the binary** — every recipient configures their own Supabase project on first launch. Ship the installer to anyone and they set it up in minutes.
 
 ### Releasing via GitHub Actions (recommended)
-Push a semver tag and CI builds the macOS DMG on a `macos-latest` runner:
+Push a semver tag and CI builds **both** the macOS DMGs (arm64 + x64) **and** the Windows `.exe` installer in parallel, then attaches all of them to a single GitHub Release:
 ```bash
 git tag v0.1.0
 git push --tags
 ```
-Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); a GitHub Release is created with the `.dmg` files attached. No GitHub Secrets required — Supabase config is runtime, not build-time.
+Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); the Release shows up at [Releases](https://github.com/shubhyansh/PeopleFlow-AI/releases) with three downloads: `FlowDesk-0.1.0-arm64.dmg`, `FlowDesk-0.1.0-x64.dmg`, `FlowDesk-Setup-0.1.0.exe`. No GitHub Secrets required — Supabase + Groq config is runtime, not build-time.
 
 ### 🍎 Mac install notes
 The first launch needs **right-click → Open** because the app isn't signed with an Apple Developer ID. This is a one-time confirmation per install, not a workaround. Want zero friction? Get an [Apple Developer Program](https://developer.apple.com/programs/) membership ($99/year), set up notarization, and update [`.github/workflows/release-mac.yml`](.github/workflows/release-mac.yml).

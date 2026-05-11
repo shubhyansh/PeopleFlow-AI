@@ -1,0 +1,71 @@
+name: Release (macOS + Windows)
+
+# Triggers:
+#   - Push a semver tag (`git tag v0.1.0 && git push --tags`)  → builds for BOTH OSes in parallel,
+#                                                                attaches every installer to a single GitHub Release.
+#   - "Run workflow" button in the Actions tab                  → builds for both OSes, uploads installers
+#                                                                as workflow artifacts (no Release).
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false   # if one OS build breaks, still ship the other
+      matrix:
+        include:
+          - os: macos-latest
+            artifact_name: FlowDesk-mac
+            artifact_glob: release/*.dmg
+          - os: windows-latest
+            artifact_name: FlowDesk-win
+            artifact_glob: release/*.exe
+
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    permissions:
+      contents: write  # softprops/action-gh-release needs this to create/update the Release
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build installer
+        env:
+          # Supabase URL + anon key + Groq key are configured per-install at runtime via the
+          # in-app setup screen. Nothing OS-specific or secret is baked into the binary here.
+          # macOS only: no Apple Developer ID → skip code signing. End user does right-click → Open
+          # once on first launch.
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+        run: npm run dist
+
+      - name: Attach installers to Release (tag pushes only)
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          # Each OS only matches its own glob; the other one finds nothing and is silently
+          # skipped (fail_on_unmatched_files defaults to false).
+          files: |
+            release/*.dmg
+            release/*.dmg.blockmap
+            release/*.exe
+            release/*.exe.blockmap
+          generate_release_notes: true
+
+      - name: Upload installer as workflow artifact (manual runs)
+        if: ${{ !startsWith(github.ref, 'refs/tags/') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}-${{ github.run_number }}
+          path: ${{ matrix.artifact_glob }}
+          if-no-files-found: error
