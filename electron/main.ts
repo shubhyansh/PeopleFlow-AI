@@ -3,6 +3,7 @@ import path from 'node:path';
 import { loadEnv } from './env';
 import { registerGroqIpc } from './ipc/groq';
 import { registerSecretsIpc } from './ipc/secrets';
+import { registerConfigIpc } from './ipc/config';
 
 const isDev = !app.isPackaged;
 const DEV_URL = process.env.VITE_DEV_SERVER_URL ?? 'http://localhost:5173';
@@ -89,6 +90,7 @@ app.whenReady().then(async () => {
   applyCsp();
   registerGroqIpc();
   registerSecretsIpc();
+  registerConfigIpc();
   await createWindow();
 
   app.on('activate', () => {

@@ -1,4 +1,9 @@
-import type { FlowdeskBridge, GroqChatRequest, GroqChatResponse } from '@shared/ipc-contract';
+import type {
+  FlowdeskBridge,
+  GroqChatRequest,
+  GroqChatResponse,
+  SupabaseConfig,
+} from '@shared/ipc-contract';
 
 function bridge(): FlowdeskBridge {
   if (typeof window === 'undefined' || !window.flowdesk) {
@@ -17,5 +22,10 @@ export const ipc = {
   },
   secrets: {
     hasGroqKey: (): Promise<boolean> => bridge().secrets.hasGroqKey(),
+  },
+  config: {
+    getSupabase: (): Promise<SupabaseConfig | null> => bridge().config.getSupabase(),
+    setSupabase: (cfg: SupabaseConfig): Promise<void> => bridge().config.setSupabase(cfg),
+    clearSupabase: (): Promise<void> => bridge().config.clearSupabase(),
   },
 };

@@ -1,7 +1,15 @@
 export const IPC = {
   groqChat: 'groq:chat',
   secretsHasGroqKey: 'secrets:hasGroqKey',
+  configGetSupabase: 'config:getSupabase',
+  configSetSupabase: 'config:setSupabase',
+  configClearSupabase: 'config:clearSupabase',
 } as const;
+
+export interface SupabaseConfig {
+  url: string;
+  anonKey: string;
+}
 
 export type GroqRole = 'system' | 'user' | 'assistant';
 
@@ -29,6 +37,11 @@ export interface FlowdeskBridge {
   };
   secrets: {
     hasGroqKey: () => Promise<boolean>;
+  };
+  config: {
+    getSupabase: () => Promise<SupabaseConfig | null>;
+    setSupabase: (cfg: SupabaseConfig) => Promise<void>;
+    clearSupabase: () => Promise<void>;
   };
 }
 

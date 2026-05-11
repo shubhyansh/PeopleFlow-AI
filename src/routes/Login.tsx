@@ -4,6 +4,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '../auth/AuthContext';
 import { InvalidCredentialsError, WeakPasswordError } from '../auth/flowdeskAuth';
 import { Spinner } from '../ui/components/Spinner';
+import { ipc } from '../lib/ipc';
 
 export default function Login() {
   const navigate = useNavigate();
@@ -120,6 +121,25 @@ export default function Login() {
             Sign in
           </button>
         </form>
+
+        <div className="mt-6 pt-4 border-t border-white/5 text-center">
+          <button
+            type="button"
+            className="text-xs text-slate-500 hover:text-slate-300 transition-colors"
+            onClick={async () => {
+              if (
+                window.confirm(
+                  'Disconnect from this Supabase project? You will be sent back to setup.',
+                )
+              ) {
+                await ipc.config.clearSupabase();
+                window.location.reload();
+              }
+            }}
+          >
+            Switch Supabase project
+          </button>
+        </div>
       </motion.div>
     </div>
   );

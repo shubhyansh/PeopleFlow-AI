@@ -103,69 +103,85 @@ Dark navy + electric teal + warm amber. Framer Motion easing on every transition
 | AI | Groq SDK · default `llama-3.3-70b-versatile` (configurable) |
 | Auth | App-level username/password + bcryptjs · admin is hardcoded |
 
-The Groq key lives in the Electron main process and is **never** sent to the renderer. The Supabase anon key ships with the binary because — surprise — that's what anon keys are for.
+The Groq key lives in the Electron main process and is **never** sent to the renderer. The Supabase URL + anon key are configured **per install** through an in-app setup screen — every team brings their own database. No keys are baked into the binary.
 
 ---
 
-## 🚀 Quick start
+## 🚀 Quick start (for end users — installing the prebuilt app)
 
-### Prerequisites
-- Node 20+
-- A Supabase project (free tier)
-- A Groq API key (free tier)
-- ~5 minutes and a willingness to follow instructions
+1. **Download** the installer for your OS from the [Releases page](https://github.com/shubhyansh/PeopleFlow-AI/releases).
+   - macOS: `FlowDesk-x.y.z-arm64.dmg` (Apple Silicon) or `-x64.dmg` (Intel)
+   - Windows: `FlowDesk-Setup-x.y.z.exe`
+2. **Install** — on macOS, the first launch needs *right-click → Open* once (no Apple Developer signature, see [§ Mac install notes](#-mac-install-notes)).
+3. **Stand up your Supabase** — sign up at [supabase.com](https://supabase.com), create a project (free tier is fine), copy the URL + anon key from **Settings → API**.
+4. **Run FlowDesk** → the first launch shows a setup screen:
+   - It hands you the bootstrap SQL — copy it, paste into Supabase **SQL Editor → New query** → Run.
+   - Paste your project URL and anon key into the form.
+   - Click **Test connection**, then **Save & continue**.
+5. **Drop a Groq key** into `~/Library/Application Support/FlowDesk/.env` (macOS) or `%APPDATA%\FlowDesk\.env` (Windows):
+   ```
+   GROQ_API_KEY=gsk_your_key_here
+   ```
+   Get one at [console.groq.com/keys](https://console.groq.com/keys). Restart FlowDesk.
+6. **Sign in** as `admin` / `Admin@123` and start adding employees.
 
-### 1. Stand up Supabase
-1. Sign up at [supabase.com](https://supabase.com) (GitHub login works).
-2. Create a new project. Wait for provisioning.
-3. Open **SQL Editor → New query** and run each file in [`supabase/migrations/`](supabase/migrations/) in order:
-   - `0001_init.sql` — schema
-   - `0002_password_optional_and_role.sql` — first-login password self-set
-   - `0003_drop_assigner_fk.sql` — admin lives outside `users`
-   - `0004_attachments_bucket.sql` — Storage bucket + policies
-   - `0005_tech_stack.sql` — `tech_stack` column + schema reload
-4. Optional: run [`supabase/seed/reset_and_seed.sql`](supabase/seed/reset_and_seed.sql) to load a fully-populated dummy dataset.
-5. **Settings → API**: copy `Project URL` + `anon public key`.
-
-### 2. Grab a Groq key
-Go to [console.groq.com/keys](https://console.groq.com/keys), create one, paste it later.
-
-### 3. Wire up `.env`
-```bash
-cp .env.example .env
-# then fill in:
-#   VITE_SUPABASE_URL
-#   VITE_SUPABASE_ANON_KEY
-#   GROQ_API_KEY
-#   GROQ_MODEL   (optional — defaults to llama-3.3-70b-versatile)
-```
-
-### 4. Install + run
-```bash
-npm install
-npm run dev
-```
-
-### 5. Sign in
-- **Admin:** `admin` / `Admin@123`
-- **Employee:** anything the admin adds, with a password you pick on first login.
-
-> *FlowDesk is shipped to your teammates as a single installer with all keys baked in. The Supabase anon key is designed to be public; RLS will lock down access in a future phase. Don't ship this to your worst enemy and then leave RLS off.*
+> Every install points at its own Supabase project. Hand the same DMG to a different team and they configure their own database in 3 minutes — no rebuild, no shared data.
 
 ---
 
-## 📦 Distributing to your team
+## 🛠 Quick start (for developers — running from source)
+
+1. **Clone + install**
+   ```bash
+   git clone git@github.com:shubhyansh/PeopleFlow-AI.git
+   cd PeopleFlow-AI
+   npm install
+   ```
+2. **Bootstrap Supabase** — paste [`supabase/setup.sql`](supabase/setup.sql) into Supabase **SQL Editor → New query** → Run. (Optional: also run [`supabase/seed/reset_and_seed.sql`](supabase/seed/reset_and_seed.sql) for a fully-populated dummy dataset.)
+3. **Get a Groq key** at [console.groq.com/keys](https://console.groq.com/keys).
+4. **Wire up `.env`** (dev convenience — pre-fills the setup screen so you don't retype):
+   ```bash
+   cp .env.example .env
+   # fill in:
+   #   VITE_SUPABASE_URL          (pre-fills setup screen)
+   #   VITE_SUPABASE_ANON_KEY     (pre-fills setup screen)
+   #   GROQ_API_KEY               (read at runtime by the main process)
+   #   GROQ_MODEL                 (optional; defaults to llama-3.3-70b-versatile)
+   ```
+5. **Run dev**
+   ```bash
+   npm run dev
+   ```
+   Electron window opens at the setup screen. Click **Save & continue** to land at login. Sign in as `admin` / `Admin@123`.
+
+---
+
+## 📦 Building & distributing
+
 ```bash
-npm run dist        # current platform
-npm run dist:win    # Windows .exe installer
+npm run dist:win      # Windows .exe (only from Windows)
+npm run dist:mac      # macOS .dmg  (only from macOS)
+npm run dist          # current platform
 ```
-Output lands in `release/`. Hand the installer to teammates; the keys travel with it. Teammates sign in with their assigned username and pick their own password the first time.
+
+Output lands in `release/`. **No keys are baked into the binary** — every recipient configures their own Supabase project on first launch. Ship the installer to anyone and they set it up in minutes.
+
+### Releasing via GitHub Actions (recommended)
+Push a semver tag and CI builds the macOS DMG on a `macos-latest` runner:
+```bash
+git tag v0.1.0
+git push --tags
+```
+Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); a GitHub Release is created with the `.dmg` files attached. No GitHub Secrets required — Supabase config is runtime, not build-time.
+
+### 🍎 Mac install notes
+The first launch needs **right-click → Open** because the app isn't signed with an Apple Developer ID. This is a one-time confirmation per install, not a workaround. Want zero friction? Get an [Apple Developer Program](https://developer.apple.com/programs/) membership ($99/year), set up notarization, and update [`.github/workflows/release-mac.yml`](.github/workflows/release-mac.yml).
 
 ---
 
 ## 🧪 Verification (skim before you blame the AI)
 
-After `npm run dev`:
+After `npm run dev`, the first launch lands on the setup screen. Connect to your Supabase project, then:
 
 1. Sign in as `admin` / `Admin@123`.
 2. **Employees** → add Alice. Sign out, sign in as `alice` with any password → that becomes hers.
@@ -180,8 +196,12 @@ After `npm run dev`:
 
 ```
 electron/                  Main process. Holds the Groq key; exposes IPC.
+  └── ipc/config.ts        Reads/writes flowdesk-config.json in userData
 shared/ipc-contract.ts     Single source of truth for IPC types.
-supabase/                  SQL migrations + dummy seed.
+supabase/
+  ├── setup.sql            One-shot bootstrap script users paste once
+  ├── migrations/          Per-step migrations (for those that prefer atoms)
+  └── seed/                Dummy data for dev
 src/
 ├── auth/                  flowdeskAuth + RequireRole + AuthContext
 ├── lib/
@@ -205,6 +225,7 @@ src/
 │   │                      statusStyles
 │   └── projects/          ProjectSettings (roster + lead transfer)
 ├── routes/
+│   ├── SetupScreen.tsx    First-launch: paste Supabase URL + anon key
 │   ├── Login.tsx, AdminDashboard.tsx
 │   ├── admin/             Employees, AllTasks, NewTask, EmployeeFlowchart,
 │   │                      Org, Projects

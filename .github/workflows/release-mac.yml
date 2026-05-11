@@ -29,9 +29,9 @@ jobs:
 
       - name: Build (.dmg for arm64 + x64)
         env:
-          # Vite inlines these at build time. Set them in repo Settings → Secrets and variables → Actions.
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          # Supabase URL + anon key are NOT baked at build time. Each end user
+          # enters their own values in FlowDesk's first-launch setup screen,
+          # and the values are saved to ~/Library/Application Support/FlowDesk/.
           # No Apple Developer ID — skip code signing. End user uses right-click → Open on first launch.
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
         run: npm run dist
