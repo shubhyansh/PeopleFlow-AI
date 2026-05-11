@@ -1,6 +1,10 @@
 appId: com.flowdesk.app
 productName: FlowDesk
 copyright: Copyright © 2026 FlowDesk
+# electron-builder otherwise tries to upload to GitHub itself when it detects a
+# git tag, demanding a GH_TOKEN. The release workflow uses softprops/action-gh-release
+# to do the upload instead, so disable electron-builder's own publisher.
+publish: null
 directories:
   output: release
   buildResources: build
