@@ -1,0 +1,35 @@
+appId: com.flowdesk.app
+productName: FlowDesk
+copyright: Copyright © 2026 FlowDesk
+directories:
+  output: release
+  buildResources: build
+files:
+  - dist
+  - dist-electron
+  - package.json
+asar: true
+asarUnpack:
+  - node_modules/groq-sdk/**/*
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-Setup-${version}.${ext}
+nsis:
+  oneClick: false
+  allowToChangeInstallationDirectory: true
+  perMachine: false
+  artifactName: ${productName}-Setup-${version}.${ext}
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  category: public.app-category.productivity
+linux:
+  target:
+    - AppImage
+  category: Office
