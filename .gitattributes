@@ -1,0 +1,36 @@
+# Normalise line endings across platforms.
+#
+# This pins git's view of every text file to LF in the index while still
+# checking out platform-native endings on the working copy when needed.
+# Prevents the LICENSE / README churn that recurs when the repo is touched
+# from both Windows (CRLF) and a Unix sandbox (LF).
+
+* text=auto eol=lf
+
+# Binary classifications — keep these out of any line-ending normalisation.
+*.png       binary
+*.jpg       binary
+*.jpeg      binary
+*.gif       binary
+*.ico       binary
+*.webp      binary
+*.icns      binary
+*.exe       binary
+*.dll       binary
+*.dmg       binary
+*.zip       binary
+*.tar.gz    binary
+*.7z        binary
+*.pdf       binary
+*.woff      binary
+*.woff2     binary
+*.ttf       binary
+*.otf       binary
+
+# Lockfiles — track but never diff.
+package-lock.json   -diff
+yarn.lock           -diff
+pnpm-lock.yaml      -diff
+
+# Shell scripts always LF, even on Windows checkouts.
+*.sh        text eol=lf
