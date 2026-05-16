@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+if grep -qiE 'co-?authored-by:.*(claude|anthropic|gpt|openai|copilot|noreply@anthropic)' "$1"; then
+  echo "Refusing commit: AI co-author trailers are not allowed in this repo." >&2
+  exit 1
+fi
