@@ -1,0 +1,91 @@
+name: Bug report
+description: Something is misbehaving in FlowDesk.
+title: "[bug] "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for filing a bug. The faster you can hand over a 5-line repro, the faster it gets fixed.
+        If the bug only happens against your own Supabase project, please share the schema diff (not the data).
+
+  - type: input
+    id: version
+    attributes:
+      label: FlowDesk version
+      description: Found at the bottom of the login screen, or in `package.json`.
+      placeholder: "e.g. 0.1.3"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS (Apple Silicon)
+        - macOS (Intel)
+        - Windows 10
+        - Windows 11
+        - Other
+    validations:
+      required: true
+
+  - type: dropdown
+    id: install_type
+    attributes:
+      label: How did you install?
+      options:
+        - Prebuilt installer from Releases
+        - Built from source (npm run dev)
+        - Built from source (npm run dist)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened?
+      description: A clear, calm description of what went wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect?
+      description: One sentence is enough.
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: Numbered steps, starting from a fresh launch.
+      placeholder: |
+        1. Sign in as admin
+        2. Open Employees → add Alice
+        3. ...
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / errors
+      description: |
+        Anything from DevTools console (Cmd/Ctrl+Shift+I), the Electron main-process terminal,
+        or `~/Library/Application Support/FlowDesk/logs/` (mac) / `%APPDATA%/FlowDesk/logs/` (win).
+        Redact any tokens before pasting.
+      render: shell
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I searched existing issues and didn't find a duplicate.
+          required: true
+        - label: I'm not pasting any real Supabase URLs, anon keys, or Groq keys below.
+          required: true
