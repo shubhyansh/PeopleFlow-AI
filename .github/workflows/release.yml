@@ -31,9 +31,9 @@ jobs:
       contents: write  # softprops/action-gh-release needs this to create/update the Release
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-node@v5
+      - uses: actions/setup-node@v7
         with:
           node-version: '20'
           cache: 'npm'
@@ -51,7 +51,7 @@ jobs:
 
       - name: Attach installers to Release (tag pushes only)
         if: startsWith(github.ref, 'refs/tags/')
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           # Each OS only matches its own glob; the other one finds nothing and is silently
           # skipped (fail_on_unmatched_files defaults to false).
@@ -64,7 +64,7 @@ jobs:
 
       - name: Upload installer as workflow artifact (manual runs)
         if: ${{ !startsWith(github.ref, 'refs/tags/') }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.artifact_name }}-${{ github.run_number }}
           path: ${{ matrix.artifact_glob }}
