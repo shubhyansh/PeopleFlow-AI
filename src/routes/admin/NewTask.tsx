@@ -17,14 +17,14 @@ import { useAuth } from '../../auth/AuthContext';
 import {
   INITIAL_BRIEF,
   TASK_KIND_OPTIONS,
-  composeBrief,
   composeChecklistTemplate,
   parseReqMd,
   probeForClarity,
   type InterviewBrief,
   type InterviewStep,
-  type ParsedReqMd,
 } from '../../lib/taskInterview';
+import { resolveImportedBrief } from '../../lib/reqMdImport';
+import { buildTaskDraft, leadershipAssignment } from '../../lib/taskDraft';
 import { downloadText, readTextFile, safeFilename } from '../../lib/files';
 import {
   defaultOutline,
@@ -41,7 +41,7 @@ import {
 } from '../../services/supabase/projects';
 import { listUsers } from '../../services/supabase/users';
 import { nextSequenceIndex, saveTask } from '../../services/supabase/tasks';
-import type { Client, Project, Task, TaskAttachment, TaskType, User } from '../../domain/types';
+import type { Client, Project, TaskAttachment, TaskType, User } from '../../domain/types';
 import { ChevronLeftIcon, CloseIcon } from '../../ui/components/Icon';
 import { PaperclipIcon } from '../../ui/components/IconExtras';
 import { Spinner } from '../../ui/components/Spinner';
@@ -728,83 +728,30 @@ export default function NewTask() {
     setImportError(null);
     try {
       const md = await readTextFile(file);
-      const parsed: ParsedReqMd = parseReqMd(md);
+      const resolved = resolveImportedBrief({
+        parsed: parseReqMd(md),
+        users,
+        projects,
+        clients,
+        currentAssigneeId: assigneeId,
+        lockedProjectId: leadMode ? initialProjectId : null,
+      });
 
-      // Match metadata to existing records (by name, case-insensitive)
-      const matchedAssignee = parsed.assigneeName
-        ? users.find(
-            (u) => u.name.toLowerCase() === parsed.assigneeName!.toLowerCase(),
-          )
-        : null;
-      const matchedProject = parsed.projectName
-        ? projects.find((p) => p.name.toLowerCase() === parsed.projectName!.toLowerCase())
-        : null;
-      const matchedClient = parsed.clientName
-        ? clients.find((c) => c.name.toLowerCase() === parsed.clientName!.toLowerCase())
-        : null;
-
-      // Lead-mode locks the project — if the imported project differs, refuse.
-      if (leadMode && initialProjectId && matchedProject?.id !== initialProjectId) {
-        setImportError(
-          `This .req.md is for a different project. Lead-mode is locked to "${
-            projects.find((p) => p.id === initialProjectId)?.name ?? '—'
-          }".`,
-        );
+      if (!resolved.ok) {
+        setImportError(resolved.error);
         return;
       }
 
-      // Need an assignee — either matched from the file or already set in state.
-      const finalAssigneeId = matchedAssignee?.id ?? assigneeId;
-      if (!finalAssigneeId) {
-        setImportError(
-          parsed.assigneeName
-            ? `Couldn't find an employee named "${parsed.assigneeName}". Pick the assignee first, then import again.`
-            : 'No assignee in the .req.md. Pick the assignee first, then import again.',
-        );
-        return;
-      }
+      setBrief(resolved.brief);
+      setAssigneeId(resolved.assigneeId);
 
-      const newBrief: InterviewBrief = {
-        ...INITIAL_BRIEF,
-        type: parsed.type ?? 'development',
-        ...(parsed.devKind ? { devKind: parsed.devKind } : {}),
-        ...(matchedProject
-          ? { projectId: matchedProject.id, projectName: matchedProject.name }
-          : parsed.projectName
-          ? { projectName: parsed.projectName }
-          : {}),
-        ...(matchedClient
-          ? { clientId: matchedClient.id, clientName: matchedClient.name }
-          : parsed.clientName
-          ? { clientName: parsed.clientName }
-          : {}),
-        title: parsed.title ?? '',
-        shortDescription: parsed.shortDescription,
-        outline: parsed.outline.sections.length > 0 ? parsed.outline : null,
-        sections: parsed.sections,
-        notes: parsed.notes,
-        techStack: parsed.techStack,
-        expectedOutput: parsed.expectedOutput,
-      };
-      setBrief(newBrief);
-
-      setAssigneeId(finalAssigneeId);
-
-      // Drop any existing chat history and jump to summary
+      // Drop any existing chat history and jump straight to the summary.
       setMessages([]);
       pushAssistant(
-        `Imported "${parsed.title ?? file.name}". Review the brief below and tweak anything before assigning.`,
+        `Imported "${resolved.brief.title || file.name}". Review the brief below and tweak anything before assigning.`,
       );
-
-      const missing: string[] = [];
-      if (parsed.assigneeName && !matchedAssignee)
-        missing.push(`assignee "${parsed.assigneeName}" not found — pick one in the summary`);
-      if (parsed.projectName && !matchedProject)
-        missing.push(`project "${parsed.projectName}" not found`);
-      if (parsed.clientName && !matchedClient)
-        missing.push(`client "${parsed.clientName}" not found`);
-      if (missing.length > 0) {
-        pushAssistant(`(Heads up: ${missing.join('; ')}.)`);
+      if (resolved.warnings.length > 0) {
+        pushAssistant(`(Heads up: ${resolved.warnings.join('; ')}.)`);
       }
 
       showSummary();
@@ -818,40 +765,27 @@ export default function NewTask() {
     setStep('saving');
     setSaveError(null);
     try {
-      if (
-        finalBrief.type === 'leadership' &&
-        finalBrief.projectId &&
-        finalBrief.leadId
-      ) {
+      const leadership = leadershipAssignment(finalBrief);
+      if (leadership) {
         await setProjectLeadAndMembers(
-          finalBrief.projectId,
-          finalBrief.leadId,
-          finalBrief.memberIds,
+          leadership.projectId,
+          leadership.leadId,
+          leadership.memberIds,
         );
       }
 
       const sequenceIndex = await nextSequenceIndex(assigneeId);
-      const briefMarkdown = composeBrief(finalBrief);
-      const task: Task = {
-        id: newId('tsk'),
-        title: finalBrief.title.trim(),
-        type: finalBrief.type ?? 'development',
-        ...(finalBrief.devKind ? { devKind: finalBrief.devKind } : {}),
-        ...(finalBrief.projectId ? { projectId: finalBrief.projectId } : {}),
-        ...(finalBrief.clientId ? { clientId: finalBrief.clientId } : {}),
+      const task = buildTaskDraft({
+        brief: finalBrief,
         assigneeId,
         assignerId: flowdeskUser.id,
-        status: 'pending',
-        brief: briefMarkdown,
-        expectedOutput: finalBrief.expectedOutput.trim(),
         attachments,
-        techStack: finalBrief.techStack,
-        createdAt: new Date().toISOString(),
-        parallelWith: [],
         sequenceIndex,
-        timeline: [],
-      };
+        id: newId('tsk'),
+        createdAt: new Date().toISOString(),
+      });
       await saveTask(task);
+
       setStep('done');
       pushAssistant(
         `Task "${task.title}" assigned to ${assignee?.name}. They'll see it on their flowchart.`,
