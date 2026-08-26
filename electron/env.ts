@@ -18,7 +18,10 @@ export function loadEnv(): void {
 
   for (const file of candidates) {
     if (fs.existsSync(file)) {
-      dotenv.config({ path: file });
+      // `quiet` suppresses the banner dotenv 17 prints on every load. It is an
+      // unknown option to dotenv 16, which ignores it, so this is safe to set
+      // before the bump lands.
+      dotenv.config({ path: file, quiet: true });
       break;
     }
   }
