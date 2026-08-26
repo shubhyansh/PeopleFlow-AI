@@ -3,6 +3,8 @@
 > *The task management tool built by a dev who looked at his Jira board, sighed audibly, and thought:*
 > *"What if the requirements gathered themselves?"*
 
+[![CI](https://github.com/shubhyansh/PeopleFlow-AI/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/shubhyansh/PeopleFlow-AI/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/shubhyansh/PeopleFlow-AI/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/shubhyansh/PeopleFlow-AI/actions/workflows/codeql.yml)
 [![Built with Electron](https://img.shields.io/badge/Electron-28-47848F?logo=electron&logoColor=white)](https://www.electronjs.org/)
 [![React](https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -151,6 +153,30 @@ The Groq key lives in the Electron main process and is **never** sent to the ren
    npm run dev
    ```
    Electron window opens at the setup screen. Click **Save & continue** to land at login. Sign in as `admin` / `Admin@123`.
+
+---
+
+## ✅ Tests & quality gates
+
+```bash
+npm run lint           # eslint over src, electron and shared
+npm run typecheck      # tsc against the renderer and the main-process projects
+npm test               # vitest, single run
+npm run test:watch     # vitest in watch mode
+npm run test:coverage  # vitest + v8 coverage into coverage/
+```
+
+The suite covers the pure modules behind the requirements interview — the
+`.req.md` importer and the task-row builder. Both are deliberately free of
+React, network calls and Supabase, so they run in milliseconds and the
+interesting logic (name matching, lead-mode project inheritance, which
+optional columns get written) is pinned down by assertions rather than by
+clicking through the app.
+
+Every push to `main` and every pull request runs all four gates plus the
+production build through [`ci.yml`](.github/workflows/ci.yml). CodeQL analyses
+the same tree on push, on PRs and weekly. Dependabot batches npm and Actions
+updates into one grouped pull request per ecosystem each Monday.
 
 ---
 

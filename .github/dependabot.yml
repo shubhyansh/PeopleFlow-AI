@@ -1,0 +1,63 @@
+version: 2
+
+# Two ecosystems, both weekly, both grouped. Ungrouped Dependabot on a project
+# with ~45 direct dependencies opens enough pull requests to bury the ones that
+# matter, so minor and patch bumps arrive as one PR per ecosystem and only
+# majors — the ones that actually need reading — come in on their own.
+
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: chore
+      include: scope
+    groups:
+      dev-tooling:
+        patterns:
+          - '@typescript-eslint/*'
+          - 'eslint*'
+          - 'prettier'
+          - 'typescript'
+          - 'vite'
+          - 'vitest'
+          - '@vitest/*'
+          - '@vitejs/*'
+          - 'vite-plugin-*'
+        update-types:
+          - minor
+          - patch
+      runtime:
+        patterns:
+          - '*'
+        exclude-patterns:
+          - 'electron'
+          - 'electron-builder'
+        update-types:
+          - minor
+          - patch
+    ignore:
+      # Electron majors carry Chromium and Node bumps at once; those get taken
+      # deliberately, not on a Monday morning schedule.
+      - dependency-name: electron
+        update-types: ['version-update:semver-major']
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      time: '06:00'
+      timezone: Asia/Kolkata
+    open-pull-requests-limit: 3
+    commit-message:
+      prefix: ci
+    groups:
+      actions:
+        patterns:
+          - '*'
