@@ -9,7 +9,7 @@
 [![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
 [![Groq](https://img.shields.io/badge/Groq-Llama%203.3%2070B-F55036)](https://console.groq.com/)
 [![Cross-platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-2de2d4)](#-installation)
-[![License](https://img.shields.io/badge/License-See%20LICENSE-blue)](LICENSE)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
 
 ---
 
@@ -167,13 +167,13 @@ Output lands in `release/`. **No keys are baked into the binary** — every reci
 ### Releasing via GitHub Actions (recommended)
 Push a semver tag and CI builds **both** the macOS DMGs (arm64 + x64) **and** the Windows `.exe` installer in parallel, then attaches all of them to a single GitHub Release:
 ```bash
-git tag v0.1.0
+git tag v0.1.3
 git push --tags
 ```
-Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); the Release shows up at [Releases](https://github.com/shubhyansh/PeopleFlow-AI/releases) with three downloads: `FlowDesk-0.1.0-arm64.dmg`, `FlowDesk-0.1.0-x64.dmg`, `FlowDesk-Setup-0.1.0.exe`. No GitHub Secrets required — Supabase + Groq config is runtime, not build-time.
+Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); the Release shows up at [Releases](https://github.com/shubhyansh/PeopleFlow-AI/releases) with three downloads: `FlowDesk-0.1.3-arm64.dmg`, `FlowDesk-0.1.3-x64.dmg`, `FlowDesk-Setup-0.1.3.exe`. No GitHub Secrets required — Supabase + Groq config is runtime, not build-time.
 
 ### 🍎 Mac install notes
-The first launch needs **right-click → Open** because the app isn't signed with an Apple Developer ID. This is a one-time confirmation per install, not a workaround. Want zero friction? Get an [Apple Developer Program](https://developer.apple.com/programs/) membership ($99/year), set up notarization, and update [`.github/workflows/release-mac.yml`](.github/workflows/release-mac.yml).
+The first launch needs **right-click → Open** because the app isn't signed with an Apple Developer ID. This is a one-time confirmation per install, not a workaround. Want zero friction? Get an [Apple Developer Program](https://developer.apple.com/programs/) membership ($99/year), set up notarization, and update [`.github/workflows/release.yml`](.github/workflows/release.yml).
 
 ---
 
@@ -270,7 +270,7 @@ Pull requests welcome from devs, designers, and (yes, fine) project managers. Es
 
 ## 🪪 License
 
-See [LICENSE](LICENSE).
+[Apache License 2.0](LICENSE) — use it, fork it, ship it commercially; just keep the notice.
 
 ---
 

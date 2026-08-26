@@ -4,7 +4,7 @@
   "private": true,
   "description": "FlowDesk — AI-driven conversational task management with an org-wide flowchart, backed by Google Drive.",
   "author": "shubhyansh",
-  "license": "UNLICENSED",
+  "license": "Apache-2.0",
   "main": "dist-electron/main.js",
   "scripts": {
     "dev": "vite",
