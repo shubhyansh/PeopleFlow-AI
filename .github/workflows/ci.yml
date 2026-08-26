@@ -1,0 +1,62 @@
+name: CI
+
+# Every push to main and every pull request runs the same four gates the
+# release build depends on. Packaging itself stays in `release.yml` — this
+# workflow only has to prove the tree is lintable, type-clean, tested and
+# buildable before anything is merged.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# A second push to the same branch cancels the run still in flight.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: Lint, typecheck, test, build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Typecheck (renderer + electron)
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test:coverage
+
+      # Repeats the typecheck the step above already ran. That is deliberate:
+      # `npm run build` is the exact command `release.yml` shells out to via
+      # `npm run dist`, so CI proves that command works rather than an
+      # approximation of it. The second pass costs well under a minute.
+      - name: Build renderer and main process
+        run: npm run build
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.run_number }}
+          path: coverage/
+          if-no-files-found: ignore
+          retention-days: 14

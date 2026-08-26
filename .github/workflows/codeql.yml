@@ -1,0 +1,46 @@
+name: CodeQL
+
+# Static analysis for the renderer, the Electron main process and the preload
+# bridge. The weekly cron matters more than the push trigger here: most new
+# findings come from updated CodeQL queries, not from new code.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    # Mondays 03:17 UTC — off the hour to avoid the scheduler's busiest minute.
+    - cron: '17 3 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Analyze javascript-typescript
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-and-quality
+
+      # No build step: the JavaScript/TypeScript extractor reads the sources
+      # directly, so pulling in Electron's binary to compile nothing would only
+      # slow the run down.
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: '/language:javascript-typescript'

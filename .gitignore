@@ -8,6 +8,9 @@ release/
 out/
 .vite/
 
+# Test output
+coverage/
+
 # Env
 .env
 .env.local
