@@ -4,6 +4,18 @@ version: 2
 # with ~45 direct dependencies opens enough pull requests to bury the ones that
 # matter, so minor and patch bumps arrive as one PR per ecosystem and only
 # majors — the ones that actually need reading — come in on their own.
+#
+# One exception, learned the hard way on the first run: under semver a 0.x
+# package treats a MINOR bump as breaking, but Dependabot still labels it
+# `semver-minor` and sweeps it into a grouped PR. That is how the very first
+# dev-tooling group arrived with eslint-plugin-react-refresh 0.4 -> 0.5, whose
+# peer range had changed to `eslint ^9 || ^10` against this repo's ESLint 8 —
+# `npm ci` failed in 15 seconds and took an otherwise fine prettier bump down
+# with it.
+#
+# So every dependency still on 0.x is excluded from its group and arrives as
+# its own pull request, where a red check points at exactly one package instead
+# of a batch of six.
 
 updates:
   - package-ecosystem: npm
@@ -29,6 +41,14 @@ updates:
           - '@vitest/*'
           - '@vitejs/*'
           - 'vite-plugin-*'
+        exclude-patterns:
+          # 0.x — a minor bump in any of these is a breaking change, so each
+          # ships as its own PR. The two vite-plugin-electron packages build
+          # the main and preload bundles; a silent break there is a broken
+          # installer, not a red check.
+          - 'eslint-plugin-react-refresh'
+          - 'vite-plugin-electron'
+          - 'vite-plugin-electron-renderer'
         update-types:
           - minor
           - patch
@@ -38,6 +58,8 @@ updates:
         exclude-patterns:
           - 'electron'
           - 'electron-builder'
+          # 0.x — same reason as above.
+          - 'groq-sdk'
         update-types:
           - minor
           - patch
@@ -46,6 +68,14 @@ updates:
       # deliberately, not on a Monday morning schedule.
       - dependency-name: electron
         update-types: ['version-update:semver-major']
+      # eslint-plugin-react-refresh 0.5+ requires ESLint 9 and this repo is on
+      # ESLint 8, so every 0.5 PR is red on arrival and cannot be merged. Held
+      # at 0.4.x until the flat-config migration lands; patches still come
+      # through. Remove this entry as part of that migration.
+      - dependency-name: eslint-plugin-react-refresh
+        update-types:
+          - 'version-update:semver-minor'
+          - 'version-update:semver-major'
 
   - package-ecosystem: github-actions
     directory: /
