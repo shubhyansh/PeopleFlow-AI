@@ -30,6 +30,18 @@ updates:
       prefix: chore
       include: scope
     groups:
+      # vitest and @vitest/coverage-v8 declare each other as peers at an exact
+      # version, so a PR that moves one without the other cannot install. That
+      # is what killed #17. Keeping them in their own group with every
+      # update-type means they always travel together.
+      vitest:
+        patterns:
+          - 'vitest'
+          - '@vitest/*'
+        update-types:
+          - major
+          - minor
+          - patch
       dev-tooling:
         patterns:
           - '@typescript-eslint/*'
@@ -37,8 +49,6 @@ updates:
           - 'prettier'
           - 'typescript'
           - 'vite'
-          - 'vitest'
-          - '@vitest/*'
           - '@vitejs/*'
           - 'vite-plugin-*'
         exclude-patterns:
@@ -76,6 +86,19 @@ updates:
         update-types:
           - 'version-update:semver-minor'
           - 'version-update:semver-major'
+      # vitest 4 requires Vite 6, 7 or 8; this repo is on Vite 5, and moving
+      # Vite is its own project because vite-plugin-electron builds the main
+      # and preload bundles against it. Held until that upgrade lands.
+      - dependency-name: vitest
+        update-types: ['version-update:semver-major']
+      - dependency-name: '@vitest/coverage-v8'
+        update-types: ['version-update:semver-major']
+      # Tailwind 4 is a rewrite, not a bump: the PostCSS plugin moved to
+      # @tailwindcss/postcss, the @tailwind directives are replaced by
+      # @import "tailwindcss", and the JS config needs an @config directive to
+      # keep working. Held until that migration is done deliberately.
+      - dependency-name: tailwindcss
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
