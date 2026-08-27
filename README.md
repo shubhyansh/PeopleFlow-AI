@@ -12,6 +12,16 @@
 [![Groq](https://img.shields.io/badge/Groq-Llama%203.3%2070B-F55036)](https://console.groq.com/)
 [![Cross-platform](https://img.shields.io/badge/Platform-macOS%20%7C%20Windows-2de2d4)](#-installation)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue)](LICENSE)
+[![Live demo](https://img.shields.io/badge/Live%20demo-Open%20in%20browser-2de2d4?logo=googlechrome&logoColor=white)](https://shubhyansh.github.io/PeopleFlow-AI/)
+
+<p align="center">
+  <a href="https://shubhyansh.github.io/PeopleFlow-AI/"><img src="docs/media/demo.gif" alt="Signing in, moving through the four org views, opening a blocked task, and starting an AI requirements interview" width="820"></a>
+</p>
+
+<p align="center">
+  <strong><a href="https://shubhyansh.github.io/PeopleFlow-AI/">Try it in your browser →</a></strong><br>
+  <sub>No install, no account, no database. Sign in as <code>admin</code> / <code>Admin@123</code>.</sub>
+</p>
 
 ---
 
@@ -22,6 +32,27 @@ FlowDesk is a desktop task-management app where an **AI conducts the requirement
 Every task becomes an **event-driven flowchart**: accept, blocker, resolve, parallel, complete — each lifecycle event is a node, dimmed history stacks behind the current state, and deadlines auto-extend when work was paused. Leads get scoped admin powers on their projects. Admins get an org-wide canvas grouped by person, project, client, or full hierarchy.
 
 > *In other words: the spec your PM would have written if they'd had a checklist, three espressos, and a fear of disappointing the dev team.*
+
+---
+
+## 🖥 Try it without installing anything
+
+[**shubhyansh.github.io/PeopleFlow-AI**](https://shubhyansh.github.io/PeopleFlow-AI/) runs the real renderer —
+the same components, routes, flowchart layout and lifecycle engine that the
+desktop build ships — against an in-memory store seeded with three clients,
+six teammates and eleven tasks.
+
+| In the demo | What actually happens |
+|---|---|
+| Sign-in | Real. `admin` / `Admin@123`, or any teammate (`priya`, `mei`, `daniel`, `arjun`, `sofia`, `tom`) with any 6+ character password — that is the app's genuine first-login behaviour, bcrypt and all. |
+| Data | Seeded in memory. Everything you change is real for the tab and gone on refresh. |
+| Requirements interview | The flow is real; the model is not. There is no API key in a public page, so the checklist and the clarifier come from a scripted responder in [`src/demo/groqScript.ts`](src/demo/groqScript.ts). |
+| Attachments | Uploads stay in the tab as object URLs. Nothing leaves your browser. |
+
+The swap happens at the transport boundary, not above it: a Vite plugin
+redirects `services/supabase/client.ts` to an in-memory PostgREST stand-in, so
+every service module, the auth path and all the routes run unmodified. Build it
+yourself with `npm run build:demo`.
 
 ---
 
@@ -58,6 +89,11 @@ FlowDesk doesn't replace your PM. It just makes the bar for *"thing that arrives
 - One concise clarifier per field. *"You said 'fast' — what's the p95 target?"* No essays.
 - Tighter probes than your tech lead would write at 4pm on a Friday.
 
+<p align="center">
+  <img src="docs/media/interview.png" alt="The requirements interview mid-flow: the assignee picked, the AI asking what type of task this is" width="820">
+  <br><sub><em>The interview, two questions in. Every answer narrows the checklist it generates next.</em></sub>
+</p>
+
 ### 📊 Event-Driven Flowchart
 - Every lifecycle event (created → accepted → blocker → resolved → completed) is a node.
 - Older boxes fade; the current state glows. **Blocked / on-hold / requirements-addition pulse** so urgency is visible at a glance.
@@ -70,6 +106,11 @@ FlowDesk doesn't replace your PM. It just makes the bar for *"thing that arrives
 - **By client** — sliced by external relationship.
 - **Full hierarchy** — `Client → Project → Lead-task | Admin-direct → Assignee → Tasks`. Connecting lines through every level. Pan, zoom, collapse.
 
+<p align="center">
+  <img src="docs/media/org-hierarchy.png" alt="The full-hierarchy org view: three client columns, each branching into projects, lead tasks, assignees and their task chains" width="900">
+  <br><sub><em>Full hierarchy — client → project → lead task → assignee → task chain, with status colour carried through.</em></sub>
+</p>
+
 ### 👑 Lead Role (Scoped Admin)
 - Designate any teammate as project lead when assigning a leadership task. They magically gain admin powers — *but only within their project*.
 - Leads can assign sub-tasks via the same AI interview, restricted to project members. Admin-direct tasks remain visibly admin-owned (purple `admin` pill on the event box).
@@ -79,6 +120,11 @@ FlowDesk doesn't replace your PM. It just makes the bar for *"thing that arrives
 - Image uploads land in a **separate diagrams step** with thumbnail previews — distinct from generic file/note attachments.
 - Notes (links, snippets) can be inlined with captions.
 - Anything image-shaped renders as a click-to-zoom thumbnail in the task drawer.
+
+<p align="center">
+  <img src="docs/media/task-drawer.png" alt="A blocked task open in the drawer, showing the brief sections, timing panel and the timeline with the blocker note on top" width="900">
+  <br><sub><em>A blocked task: the brief, the timing panel with the deadline paused, and the event timeline underneath.</em></sub>
+</p>
 
 ### 🛠️ Tech Stack Capture
 - Pick from a curated chip palette (React, Postgres, Docker, Groq, …) or add custom.
@@ -166,17 +212,31 @@ npm run test:watch     # vitest in watch mode
 npm run test:coverage  # vitest + v8 coverage into coverage/
 ```
 
-The suite covers the pure modules behind the requirements interview — the
+97 cases, all in Node, no browser and no network.
+
+The first half covers the pure modules behind the requirements interview — the
 `.req.md` importer and the task-row builder. Both are deliberately free of
 React, network calls and Supabase, so they run in milliseconds and the
 interesting logic (name matching, lead-mode project inheritance, which
 optional columns get written) is pinned down by assertions rather than by
 clicking through the app.
 
+The second half covers the demo backend, and earns its keep twice over: it
+checks the in-memory store against PostgREST's actual semantics (`ilike` is
+case-insensitive, `maybeSingle` errors on two rows, a count only appears when
+asked for), and then points the **real** service modules at it. So
+`listTasksByAssignee`, `saveTask`, `setProjectLead` and `signIn` are exercised
+end to end — against a fake wire, but with none of the code under test
+replaced. Seed integrity is asserted too: no task may reference a person,
+project or client that does not exist.
+
 Every push to `main` and every pull request runs all four gates plus the
 production build through [`ci.yml`](.github/workflows/ci.yml). CodeQL analyses
 the same tree on push, on PRs and weekly. Dependabot batches npm and Actions
 updates into one grouped pull request per ecosystem each Monday.
+[`pages.yml`](.github/workflows/pages.yml) rebuilds and republishes the demo on
+every push to `main` that touches the renderer — and refuses to deploy if the
+unit suite fails, so a broken board never goes live.
 
 ---
 
