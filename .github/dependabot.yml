@@ -99,6 +99,13 @@ updates:
       # keep working. Held until that migration is done deliberately.
       - dependency-name: tailwindcss
         update-types: ['version-update:semver-major']
+      # @types/node tracks the Node the workflows actually run, which is 22 in
+      # ci.yml, pages.yml and release.yml. A major past that describes APIs the
+      # runtime does not have, so it lets code typecheck against a Node that
+      # never executes it. #27 offered 26 and was closed for exactly that.
+      # Raise this and the workflows together, never one on its own.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
 
   - package-ecosystem: github-actions
     directory: /
