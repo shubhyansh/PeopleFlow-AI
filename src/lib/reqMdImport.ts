@@ -43,6 +43,10 @@ function byName<T extends { name: string }>(items: T[], name: string | undefined
  * lead may only assign inside their own project. A file that names no project
  * at all inherits the locked project instead of being refused — a brief with
  * no project line is portable, not foreign.
+ *
+ * Client resolution: a project has exactly one client, so whenever a project
+ * resolves its client is authoritative. A `client:` line naming somebody else
+ * is reported as a warning and discarded rather than applied.
  */
 export function resolveImportedBrief(input: ResolveImportInput): ResolveImportResult {
   const { parsed, users, projects, clients, currentAssigneeId, lockedProjectId } = input;
@@ -87,7 +91,18 @@ export function resolveImportedBrief(input: ResolveImportInput): ResolveImportRe
   const inheritedClient = effectiveProject?.clientId
     ? clients.find((c) => c.id === effectiveProject.clientId) ?? null
     : null;
-  const effectiveClient = matchedClient ?? inheritedClient;
+
+  // A project has exactly one client, so a `client:` line naming a different
+  // existing client is a contradiction rather than an override: taking it at
+  // face value produces a brief that says Atlas belongs to Acme Robotics while
+  // pointing at Northwind's project. The project wins, and the discarded name
+  // is surfaced as a warning so the mismatch stays visible instead of being
+  // silently dropped.
+  const clientContradictsProject =
+    matchedClient !== null && inheritedClient !== null && matchedClient.id !== inheritedClient.id;
+  const effectiveClient = clientContradictsProject
+    ? inheritedClient
+    : (matchedClient ?? inheritedClient);
 
   const brief: InterviewBrief = {
     ...INITIAL_BRIEF,
@@ -121,6 +136,11 @@ export function resolveImportedBrief(input: ResolveImportInput): ResolveImportRe
   }
   if (parsed.clientName && !matchedClient) {
     warnings.push(`client "${parsed.clientName}" not found`);
+  } else if (clientContradictsProject && matchedClient && inheritedClient && effectiveProject) {
+    warnings.push(
+      `client "${matchedClient.name}" ignored — ${effectiveProject.name} belongs to ` +
+        `"${inheritedClient.name}"`,
+    );
   }
 
   return { ok: true, brief, assigneeId, warnings };

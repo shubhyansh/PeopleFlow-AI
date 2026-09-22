@@ -128,17 +128,41 @@ describe('resolveImportedBrief — admin mode', () => {
     expect(result.warnings).toContain('client "Umbrella Corp" not found');
   });
 
-  // Documents current behaviour, which is arguably wrong: a named client that
-  // exists overrides the project's own client, so the brief can end up saying
-  // Atlas belongs to Acme Robotics. Tracked as a follow-up rather than changed
-  // here, because the fix is a behaviour change and this is a test pass.
-  it('lets an existing named client override the client of the matched project', () => {
+  // A project has exactly one client, so a file naming a different existing
+  // client is a contradiction, not an override. The project's own client wins
+  // and the discarded name is surfaced as a warning.
+  it('discards a named client that contradicts the client of the matched project', () => {
     const result = resolve({ parsed: parsedFixture({ clientName: 'Acme Robotics' }) });
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.brief.projectId).toBe('p-atlas');
+    expect(result.brief.clientId).toBe('c-north');
+    expect(result.brief.clientName).toBe('Northwind');
+    expect(result.warnings).toContain(
+      'client "Acme Robotics" ignored — Atlas belongs to "Northwind"',
+    );
+  });
+
+  it('stays silent when the named client is already the client of the project', () => {
+    const result = resolve();
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.brief.clientId).toBe('c-north');
+    expect(result.warnings).toEqual([]);
+  });
+
+  it('honours a named existing client when no project resolves to contradict it', () => {
+    const result = resolve({
+      parsed: parsedFixture({ projectName: undefined, clientName: 'Acme Robotics' }),
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.brief.projectId).toBeNull();
     expect(result.brief.clientId).toBe('c-acme');
+    expect(result.brief.clientName).toBe('Acme Robotics');
     expect(result.warnings).toEqual([]);
   });
 });
@@ -238,7 +262,9 @@ describe('resolveImportedBrief — lead mode', () => {
     expect(result.error).toContain("doesn't exist here");
   });
 
-  it('prefers an explicitly named client over the inherited one', () => {
+  // The locked project has exactly one client too, so the contradiction is
+  // resolved the same way here as in admin mode: the project wins.
+  it('keeps the client of the locked project when the file names a different one', () => {
     const result = resolve({
       parsed: parsedFixture({ projectName: undefined, clientName: 'Acme Robotics' }),
       lockedProjectId: 'p-atlas',
@@ -247,6 +273,10 @@ describe('resolveImportedBrief — lead mode', () => {
     expect(result.ok).toBe(true);
     if (!result.ok) return;
     expect(result.brief.projectId).toBe('p-atlas');
-    expect(result.brief.clientId).toBe('c-acme');
+    expect(result.brief.clientId).toBe('c-north');
+    expect(result.brief.clientName).toBe('Northwind');
+    expect(result.warnings).toContain(
+      'client "Acme Robotics" ignored — Atlas belongs to "Northwind"',
+    );
   });
 });
