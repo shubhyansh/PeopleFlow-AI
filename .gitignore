@@ -20,7 +20,6 @@ coverage/
 # Editor
 .vscode/
 .idea/
-.claude/
 *.suo
 *.ntvs*
 *.njsproj
