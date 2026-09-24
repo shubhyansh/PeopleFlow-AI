@@ -177,6 +177,9 @@ The Groq key lives in the Electron main process and is **never** sent to the ren
 
 ## 🛠 Quick start (for developers — running from source)
 
+0. **Use Node 22.** Every workflow pins it, `@types/node` tracks it, and
+   there is an [`.nvmrc`](.nvmrc) so `nvm use` picks it up. Newer majors mostly
+   work, but a green run on one of them says nothing about CI.
 1. **Clone + install**
    ```bash
    git clone git@github.com:shubhyansh/PeopleFlow-AI.git
