@@ -40,7 +40,7 @@ Every task becomes an **event-driven flowchart**: accept, blocker, resolve, para
 [**shubhyansh.github.io/PeopleFlow-AI**](https://shubhyansh.github.io/PeopleFlow-AI/) runs the real renderer —
 the same components, routes, flowchart layout and lifecycle engine that the
 desktop build ships — against an in-memory store seeded with three clients,
-six teammates and eleven tasks.
+three projects, six teammates and twelve tasks.
 
 | In the demo | What actually happens |
 |---|---|
@@ -177,6 +177,9 @@ The Groq key lives in the Electron main process and is **never** sent to the ren
 
 ## 🛠 Quick start (for developers — running from source)
 
+0. **Use Node 22.** Every workflow pins it, `@types/node` tracks it, and
+   there is an [`.nvmrc`](.nvmrc) so `nvm use` picks it up. Newer majors mostly
+   work, but a green run on one of them says nothing about CI.
 1. **Clone + install**
    ```bash
    git clone git@github.com:shubhyansh/PeopleFlow-AI.git
@@ -212,14 +215,17 @@ npm run test:watch     # vitest in watch mode
 npm run test:coverage  # vitest + v8 coverage into coverage/
 ```
 
-97 cases, all in Node, no browser and no network.
+99 cases, all in Node, no browser and no network.
 
 The first half covers the pure modules behind the requirements interview — the
 `.req.md` importer and the task-row builder. Both are deliberately free of
 React, network calls and Supabase, so they run in milliseconds and the
 interesting logic (name matching, lead-mode project inheritance, which
 optional columns get written) is pinned down by assertions rather than by
-clicking through the app.
+clicking through the app. The importer's client rule is pinned there too: a
+project owns exactly one client, so whenever a project resolves, its client
+wins and a `client:` line naming somebody else is discarded with a warning
+rather than quietly overriding it.
 
 The second half covers the demo backend, and earns its keep twice over: it
 checks the in-memory store against PostgREST's actual semantics (`ilike` is
@@ -251,12 +257,24 @@ npm run dist          # current platform
 Output lands in `release/`. **No keys are baked into the binary** — every recipient configures their own Supabase project on first launch. Ship the installer to anyone and they set it up in minutes.
 
 ### Releasing via GitHub Actions (recommended)
-Push a semver tag and CI builds **both** the macOS DMGs (arm64 + x64) **and** the Windows `.exe` installer in parallel, then attaches all of them to a single GitHub Release:
+A semver tag builds **both** the macOS DMGs (arm64 + x64) **and** the Windows `.exe` installer in parallel, then attaches all of them to a single GitHub Release. Two things have to line up before you push one:
+
+- **The tag must not exist yet.** `git tag` refuses to create a tag that is already there, so copying a version out of this README is how you end up with a command that fails and a release that never runs. Check with `git tag --list 'v*'` first — `v0.1.3` is taken.
+- **`package.json` must carry the version you are tagging.** electron-builder names the installers from `package.json` (`artifactName: ${productName}-Setup-${version}`), never from the tag, so a mismatch attaches `FlowDesk-Setup-0.1.3.exe` to a Release called `v0.2.0`.
+
+So the order is bump, commit, tag, push — substituting the version you are actually cutting:
+
 ```bash
-git tag v0.1.3
-git push --tags
+npm version 0.2.0 --no-git-tag-version   # rewrites package.json + package-lock.json
+git commit -am "chore: release v0.2.0"
+git push
+git tag v0.2.0
+git push origin v0.2.0
 ```
-Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); the Release shows up at [Releases](https://github.com/shubhyansh/PeopleFlow-AI/releases) with three downloads: `FlowDesk-0.1.3-arm64.dmg`, `FlowDesk-0.1.3-x64.dmg`, `FlowDesk-Setup-0.1.3.exe`. No GitHub Secrets required — Supabase + Groq config is runtime, not build-time.
+
+Watch the build at the [Actions tab](https://github.com/shubhyansh/PeopleFlow-AI/actions); the Release shows up at [Releases](https://github.com/shubhyansh/PeopleFlow-AI/releases) with three downloads named after that version — `FlowDesk-0.2.0-arm64.dmg`, `FlowDesk-0.2.0-x64.dmg`, `FlowDesk-Setup-0.2.0.exe`. No GitHub Secrets required — Supabase + Groq config is runtime, not build-time.
+
+Need installers without publishing anything? **Run workflow** on [`release.yml`](.github/workflows/release.yml) builds both operating systems and leaves the installers as workflow artifacts — no tag, no Release.
 
 ### 🍎 Mac install notes
 The first launch needs **right-click → Open** because the app isn't signed with an Apple Developer ID. This is a one-time confirmation per install, not a workaround. Want zero friction? Get an [Apple Developer Program](https://developer.apple.com/programs/) membership ($99/year), set up notarization, and update [`.github/workflows/release.yml`](.github/workflows/release.yml).

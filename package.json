@@ -2,7 +2,7 @@
   "name": "flowdesk",
   "version": "0.1.3",
   "private": true,
-  "description": "FlowDesk — AI-driven conversational task management with an org-wide flowchart, backed by Google Drive.",
+  "description": "FlowDesk — AI-driven conversational task management with an org-wide flowchart, backed by Supabase.",
   "author": "shubhyansh",
   "license": "Apache-2.0",
   "main": "dist-electron/main.js",
