@@ -157,7 +157,16 @@ export function TaskFlowchartView({ assigneeId, assigneeName, mode }: Props) {
         taskCount={visibleTasks.length}
       />
 
-      <div className="flex-1 min-h-0 relative">
+      {/*
+        The canvas is a pan-and-zoom graph, so a screen reader gets nothing
+        useful out of it. Naming the region at least announces what the user
+        has landed in, and the summary below gives the shape of it in words.
+      */}
+      <div className="flex-1 min-h-0 relative" role="region" aria-label="Task flowchart">
+        <p className="sr-only">
+          {visibleTasks.length} task{visibleTasks.length === 1 ? '' : 's'} shown as a flowchart.
+          Use the filters above the chart to narrow it, or select a node to open its details.
+        </p>
         <ReactFlow
           nodes={nodes as Node<EventNodeData>[]}
           edges={edges as Edge[]}
