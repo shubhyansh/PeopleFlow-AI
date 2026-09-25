@@ -21,6 +21,16 @@ export default defineConfig({
       reporter: ['text-summary', 'lcov'],
       include: ['src/lib/**/*.ts', 'src/demo/**/*.ts'],
       exclude: ['src/**/__tests__/**'],
+      // A ratchet, not a target. Each floor sits just under what the suite
+      // covers today, so the build fails when a change removes coverage and
+      // stays quiet when it adds some. Raise these deliberately after the
+      // suite grows; never lower one to make a red build green.
+      thresholds: {
+        statements: 37,
+        lines: 37,
+        functions: 55,
+        branches: 87,
+      },
     },
   },
 });
