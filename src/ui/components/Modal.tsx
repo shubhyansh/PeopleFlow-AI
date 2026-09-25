@@ -1,4 +1,4 @@
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { CloseIcon } from './Icon';
 
@@ -18,6 +18,10 @@ const widthClass = {
 };
 
 export function Modal({ open, onClose, title, description, children, width = 'md' }: ModalProps) {
+  const titleId = useId();
+  const descriptionId = useId();
+  const panelRef = useRef<HTMLDivElement | null>(null);
+
   useEffect(() => {
     if (!open) return;
     function onKey(e: KeyboardEvent) {
@@ -26,6 +30,27 @@ export function Modal({ open, onClose, title, description, children, width = 'md
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [open, onClose]);
+
+  /**
+   * `aria-modal` tells a screen reader that everything behind this panel is
+   * inert, which is only true if focus is actually inside it. Without this,
+   * opening a dialog left the keyboard on whatever button was pressed, and
+   * the next Tab walked the page underneath. Focus moves to the first
+   * focusable control in the panel on open, and returns to the element that
+   * opened it on close, so a keyboard user does not lose their place.
+   */
+  useEffect(() => {
+    if (!open) return;
+    const opener = document.activeElement as HTMLElement | null;
+    const panel = panelRef.current;
+    const first = panel?.querySelector<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    (first ?? panel)?.focus();
+    return () => {
+      if (opener && typeof opener.focus === 'function') opener.focus();
+    };
+  }, [open]);
 
   return (
     <AnimatePresence>
@@ -38,6 +63,7 @@ export function Modal({ open, onClose, title, description, children, width = 'md
           transition={{ duration: 0.18 }}
         >
           <motion.div
+            aria-hidden="true"
             className="absolute inset-0 bg-navy-950/70 backdrop-blur-sm"
             onClick={onClose}
             initial={{ opacity: 0 }}
@@ -45,8 +71,12 @@ export function Modal({ open, onClose, title, description, children, width = 'md
             exit={{ opacity: 0 }}
           />
           <motion.div
+            ref={panelRef}
             role="dialog"
             aria-modal="true"
+            aria-labelledby={titleId}
+            aria-describedby={description ? descriptionId : undefined}
+            tabIndex={-1}
             initial={{ opacity: 0, y: -8, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -8, scale: 0.98 }}
@@ -61,9 +91,13 @@ export function Modal({ open, onClose, title, description, children, width = 'md
             >
               <CloseIcon size={18} />
             </button>
-            <h2 className="font-display text-xl font-semibold text-white mb-1 pr-8">{title}</h2>
+            <h2 id={titleId} className="font-display text-xl font-semibold text-white mb-1 pr-8">
+              {title}
+            </h2>
             {description && (
-              <p className="text-slate-400 text-sm mb-5">{description}</p>
+              <p id={descriptionId} className="text-slate-400 text-sm mb-5">
+                {description}
+              </p>
             )}
             {!description && <div className="mb-5" />}
             {children}

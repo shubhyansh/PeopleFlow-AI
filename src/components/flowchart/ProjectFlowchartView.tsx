@@ -195,7 +195,12 @@ export function ProjectFlowchartView({ projectId }: Props) {
 
   return (
     <div className="h-full flex flex-col">
-      <div className="flex-1 min-h-0 relative">
+      {/* Same reasoning as the per-assignee chart: name the region. */}
+      <div className="flex-1 min-h-0 relative" role="region" aria-label="Project flowchart">
+        <p className="sr-only">
+          {tasks.length} task{tasks.length === 1 ? '' : 's'} in this project, shown as a flowchart.
+          Select a node to open its details.
+        </p>
         <ReactFlow
           nodes={nodes as Node[]}
           edges={edges as Edge[]}

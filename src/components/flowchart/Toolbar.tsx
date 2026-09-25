@@ -1,3 +1,4 @@
+import { useId } from 'react';
 import type { TaskStatus } from '../../domain/types';
 import { STATUS_STYLES } from './statusStyles';
 
@@ -24,6 +25,12 @@ export function Toolbar({
   onStatusFilter,
   taskCount,
 }: Props) {
+  // The two filters were labelled by a neighbouring `span`, which reads to a
+  // screen reader as an unnamed combo box sitting next to some loose text.
+  // A real `label`/`id` pair names the control and makes the word clickable.
+  const projectSelectId = useId();
+  const statusSelectId = useId();
+
   return (
     <div className="flex flex-wrap items-center gap-3 px-6 py-3 border-b border-white/5 bg-navy-900/50 backdrop-blur-sm">
       <div className="text-xs font-mono text-slate-500 uppercase tracking-wider">
@@ -45,8 +52,11 @@ export function Toolbar({
       <div className="h-4 w-px bg-white/10" />
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-500">Project</span>
+        <label htmlFor={projectSelectId} className="text-xs text-slate-500">
+          Project
+        </label>
         <select
+          id={projectSelectId}
           className="input-base !py-1.5 !px-3 !text-xs w-44"
           value={projectFilter}
           onChange={(e) => onProjectFilter(e.target.value)}
@@ -61,8 +71,11 @@ export function Toolbar({
       </div>
 
       <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-500">Status</span>
+        <label htmlFor={statusSelectId} className="text-xs text-slate-500">
+          Status
+        </label>
         <select
+          id={statusSelectId}
           className="input-base !py-1.5 !px-3 !text-xs w-36"
           value={statusFilter}
           onChange={(e) => onStatusFilter(e.target.value as StatusFilter)}
